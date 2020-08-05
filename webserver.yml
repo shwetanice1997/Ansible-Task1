@@ -1,0 +1,61 @@
+- hosts: "Managed_node"
+  tasks: 
+  - name: Configuring Docker Repository
+    yum_repository:
+      name: Docker
+      description: "Docker Repo"
+      baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable" 
+      gpgcheck: no
+    register: x
+
+
+  - name: Checking Configuration Status
+    debug: 
+      var: x.failed
+
+  - name: Installing Docker
+    package:
+      name: "docker-ce-18.06.3.ce-3.el7.x86_64"
+      state: present
+    register: y
+    when: x.failed == false
+
+
+  - name: Checking Install Status
+    debug:
+      var: y.failed
+
+  - name: Starting Docker Daemon
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+    when: y.failed == false
+
+  - name: "Installing Python"
+    command: "pip3 install docker"
+
+  - name: creating folder and copy files in that folder
+    file:
+      path: "/test"
+      state: directory
+  - name: copying local files into folder
+    copy:
+      src: "task1.html"
+      dest: "/test/"
+
+  - name: Creating Docker Container and exposed the port
+    docker_container:
+      name: "webserver"
+      image: "httpd"
+      state: "started"
+      exposed_ports:
+      - "80"
+      ports:
+      - "9999:80"
+      volumes:
+      - /test:/usr/local/apache2/htdocs/        
+
+
+
